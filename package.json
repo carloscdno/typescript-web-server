@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.js",
-    "dev": "npx tsc && node dist/index.js"
+    "dev": "tsc && concurrently \"tsc --watch --preserveWatchOutput\" \"node --watch dist/index.js\""
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.6",
+    "concurrently": "^10.0.7",
     "typescript": "^7.0.2"
   },
   "dependencies": {
