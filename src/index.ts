@@ -1,6 +1,6 @@
 import express from "express";
 import { handlerReadiness } from "./api/readiness.js";
-import { middlewareLogResponses } from "./middleware.js";
+import { middlewareLogResponses, middlewareMetricsInc } from "./middleware.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -8,8 +8,8 @@ const PORT = Number(process.env.PORT) || 8080;
 // Log every response with a non-OK status code
 app.use(middlewareLogResponses);
 
-// Serve static files from ./src/app under the /app prefix
-app.use("/app", express.static("./src/app"));
+// Count hits, then serve static files from ./src/app under /app
+app.use("/app", middlewareMetricsInc, express.static("./src/app"));
 
 // Readiness endpoint
 app.get("/healthz", handlerReadiness);
