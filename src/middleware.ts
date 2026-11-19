@@ -1,5 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { config } from "./config.js";
+import { respondWithError } from "./api/json.js";
+
+type HttpError = Error & { status?: number; type?: string };
 
 export function middlewareLogResponses(
   req: Request,
@@ -26,4 +29,26 @@ export function middlewareMetricsInc(
 ): void {
   config.fileserverHits++;
   next();
+}
+
+// Error-handling middleware: Express recognizes it by its 4 parameters
+export function middlewareErrorHandler(
+  err: HttpError,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+): void {
+  if (err.type === "entity.parse.failed") {
+    respondWithError(res, 400, "Invalid JSON");
+    return;
+  }
+
+  // Client errors raised by Express middleware (e.g. 413 payload too large)
+  if (typeof err.status === "number" && err.status >= 400 && err.status < 500) {
+    respondWithError(res, err.status, err.message);
+    return;
+  }
+
+  console.error(err);
+  respondWithError(res, 500, "Something went wrong");
 }
