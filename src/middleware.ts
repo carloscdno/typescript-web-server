@@ -1,8 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { config } from "./config.js";
 import { respondWithError } from "./api/json.js";
+import { HttpError } from "./errors.js";
 
-type HttpError = Error & { status?: number; type?: string };
+type BodyParserError = Error & { type?: string };
 
 export function middlewareLogResponses(
   req: Request,
@@ -33,29 +34,34 @@ export function middlewareMetricsInc(
 
 // Error-handling middleware: Express recognizes it by its 4 parameters
 export function middlewareErrorHandler(
-  err: HttpError,
+  err: Error,
   _req: Request,
   res: Response,
   next: NextFunction,
 ): void {
-  // If the response already started, let Express close the connection
   if (res.headersSent) {
     next(err);
     return;
   }
 
-  if (err.type === "entity.parse.failed") {
+  // Custom errors: their message is meant for the client
+  if (err instanceof HttpError) {
+    respondWithError(res, err.statusCode, err.message);
+    return;
+  }
+
+  // Errors from express.json(): fixed messages, never err.message
+  const { type } = err as BodyParserError;
+  if (type === "entity.parse.failed") {
     respondWithError(res, 400, "Invalid JSON");
     return;
   }
-
-  // Client errors raised by Express middleware (e.g. 413 payload too large)
-  if (typeof err.status === "number" && err.status >= 400 && err.status < 500) {
-    respondWithError(res, err.status, err.message);
+  if (type === "entity.too.large") {
+    respondWithError(res, 413, "Payload too large");
     return;
   }
 
-  // Anything else is unhandled
+  // Anything else: log the details, expose nothing
   console.log(err);
   respondWithError(res, 500, "Something went wrong on our end");
 }
