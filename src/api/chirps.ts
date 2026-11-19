@@ -26,7 +26,10 @@ function cleanChirp(text: string): string {
     .join(" ");
 }
 
-export function handlerValidateChirp(req: Request, res: Response): void {
+export async function handlerValidateChirp(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const params: unknown = req.body;
 
   if (!isChirpParams(params)) {
@@ -35,8 +38,7 @@ export function handlerValidateChirp(req: Request, res: Response): void {
   }
 
   if (params.body.length > MAX_CHIRP_LENGTH) {
-    respondWithError(res, 400, "Chirp is too long");
-    return;
+    throw new Error("Chirp is too long");
   }
 
   respondWithJSON(res, 200, { cleanedBody: cleanChirp(params.body) });
