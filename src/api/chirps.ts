@@ -7,7 +7,6 @@ type ChirpParams = {
   body: string;
 };
 
-// Type guard: checks at runtime that the parsed JSON has the expected shape
 function isChirpParams(value: unknown): value is ChirpParams {
   return (
     typeof value === "object" &&
@@ -18,34 +17,18 @@ function isChirpParams(value: unknown): value is ChirpParams {
 }
 
 export function handlerValidateChirp(req: Request, res: Response): void {
-  let rawBody = "";
+  // express.json() already parsed the body; its shape is still unverified
+  const params: unknown = req.body;
 
-  // Decode chunks as UTF-8 safely, even if a character is split between chunks
-  req.setEncoding("utf8");
+  if (!isChirpParams(params)) {
+    respondWithError(res, 400, "Invalid request body");
+    return;
+  }
 
-  req.on("data", (chunk: string) => {
-    rawBody += chunk;
-  });
+  if (params.body.length > MAX_CHIRP_LENGTH) {
+    respondWithError(res, 400, "Chirp is too long");
+    return;
+  }
 
-  req.on("end", () => {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(rawBody);
-    } catch {
-      respondWithError(res, 400, "Invalid JSON");
-      return;
-    }
-
-    if (!isChirpParams(parsed)) {
-      respondWithError(res, 400, "Invalid request body");
-      return;
-    }
-
-    if (parsed.body.length > MAX_CHIRP_LENGTH) {
-      respondWithError(res, 400, "Chirp is too long");
-      return;
-    }
-
-    respondWithJSON(res, 200, { valid: true });
-  });
+  respondWithJSON(res, 200, { valid: true });
 }

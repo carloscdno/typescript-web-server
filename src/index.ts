@@ -1,6 +1,6 @@
 import express from "express";
 import { handlerReadiness } from "./api/readiness.js";
-import { middlewareLogResponses, middlewareMetricsInc } from "./middleware.js";
+import { middlewareLogResponses, middlewareMetricsInc, middlewareErrorHandler } from "./middleware.js";
 import { handlerMetrics } from "./api/metrics.js";
 import { handlerReset } from "./api/reset.js";
 import { handlerValidateChirp } from "./api/chirps.js";
@@ -11,8 +11,14 @@ const PORT = Number(process.env.PORT) || 8080;
 // Log every response with a non-OK status code
 app.use(middlewareLogResponses);
 
+// Parse JSON request bodies into req.body
+app.use(express.json());
+
 // Website
 app.use("/app", middlewareMetricsInc, express.static("./src/app"));
+
+// Middleware error handler
+app.use(middlewareErrorHandler);
 
 // API
 app.get("/api/healthz", handlerReadiness);
