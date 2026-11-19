@@ -1,14 +1,34 @@
+import type { MigrationConfig } from "drizzle-orm/migrator";
+
 // Load variables from .env into process.env
 process.loadEnvFile();
 
 type APIConfig = {
   fileserverHits: number;
-  dbURL: string;
 };
 
-export const config: APIConfig = {
-  fileserverHits: 0,
-  dbURL: envOrThrow("DB_URL"),
+type DBConfig = {
+  url: string;
+  migrationConfig: MigrationConfig;
+};
+
+type Config = {
+  api: APIConfig;
+  db: DBConfig;
+};
+
+const migrationConfig: MigrationConfig = {
+  migrationsFolder: "./src/db/migrations",
+};
+
+export const config: Config = {
+  api: {
+    fileserverHits: 0,
+  },
+  db: {
+    url: envOrThrow("DB_URL"),
+    migrationConfig,
+  },
 };
 
 // Fail fast at startup if a required variable is missing
