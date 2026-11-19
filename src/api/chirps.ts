@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import { respondWithError, respondWithJSON } from "./json.js";
+import { respondWithJSON } from "./json.js";
+import { BadRequestError } from "../errors.js";
 
 const MAX_CHIRP_LENGTH = 140;
 const PROFANE_WORDS = new Set(["kerfuffle", "sharbert", "fornax"]);
@@ -33,12 +34,13 @@ export async function handlerValidateChirp(
   const params: unknown = req.body;
 
   if (!isChirpParams(params)) {
-    respondWithError(res, 400, "Invalid request body");
-    return;
+    throw new BadRequestError("Invalid request body");
   }
 
   if (params.body.length > MAX_CHIRP_LENGTH) {
-    throw new Error("Chirp is too long");
+    throw new BadRequestError(
+      `Chirp is too long. Max length is ${MAX_CHIRP_LENGTH}`,
+    );
   }
 
   respondWithJSON(res, 200, { cleanedBody: cleanChirp(params.body) });
