@@ -36,8 +36,14 @@ export function middlewareErrorHandler(
   err: HttpError,
   _req: Request,
   res: Response,
-  _next: NextFunction,
+  next: NextFunction,
 ): void {
+  // If the response already started, let Express close the connection
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
   if (err.type === "entity.parse.failed") {
     respondWithError(res, 400, "Invalid JSON");
     return;
@@ -49,6 +55,7 @@ export function middlewareErrorHandler(
     return;
   }
 
-  console.error(err);
-  respondWithError(res, 500, "Something went wrong");
+  // Anything else is unhandled
+  console.log(err);
+  respondWithError(res, 500, "Something went wrong on our end");
 }
