@@ -4,9 +4,9 @@ import { middlewareLogResponses, middlewareMetricsInc, middlewareErrorHandler } 
 import { handlerMetrics } from "./api/metrics.js";
 import { handlerReset } from "./api/reset.js";
 import { handlerValidateChirp } from "./api/chirps.js";
+import { config } from "./config.js";
 
 const app = express();
-const PORT = Number(process.env.PORT) || 8080;
 
 // Log every response with a non-OK status code
 app.use(middlewareLogResponses);
@@ -28,7 +28,7 @@ app.post("/admin/reset", handlerReset);
 // Middleware error handler
 app.use(middlewareErrorHandler);
 
-app.listen(PORT, (error?: Error) => {
+app.listen(config.api.port, (error?: Error) => {
   if (error) throw error;
-  console.log(`Server listening on http://localhost:${PORT}`);
+  console.log(`Server listening on http://localhost:${config.api.port}`);
 });
