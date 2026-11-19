@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import { respondWithError, respondWithJSON } from "./json.js";
 
 const MAX_CHIRP_LENGTH = 140;
+const PROFANE_WORDS = new Set(["kerfuffle", "sharbert", "fornax"]);
+const REPLACEMENT = "****";
 
 type ChirpParams = {
   body: string;
@@ -16,8 +18,15 @@ function isChirpParams(value: unknown): value is ChirpParams {
   );
 }
 
+// Replace profane words (case-insensitive, exact match between spaces)
+function cleanChirp(text: string): string {
+  return text
+    .split(" ")
+    .map((word) => (PROFANE_WORDS.has(word.toLowerCase()) ? REPLACEMENT : word))
+    .join(" ");
+}
+
 export function handlerValidateChirp(req: Request, res: Response): void {
-  // express.json() already parsed the body; its shape is still unverified
   const params: unknown = req.body;
 
   if (!isChirpParams(params)) {
@@ -30,5 +39,5 @@ export function handlerValidateChirp(req: Request, res: Response): void {
     return;
   }
 
-  respondWithJSON(res, 200, { valid: true });
+  respondWithJSON(res, 200, { cleanedBody: cleanChirp(params.body) });
 }
