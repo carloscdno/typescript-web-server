@@ -10,15 +10,13 @@ const PORT = Number(process.env.PORT) || 8080;
 // Log every response with a non-OK status code
 app.use(middlewareLogResponses);
 
-// Count hits, then serve static files from ./src/app under /app
+// Website
 app.use("/app", middlewareMetricsInc, express.static("./src/app"));
 
-// Readiness endpoint
-app.get("/healthz", handlerReadiness);
-
-app.get("/metrics", handlerMetrics);
-
-app.get("/reset", handlerReset);
+// API
+app.get("/api/healthz", handlerReadiness);
+app.get("/api/metrics", handlerMetrics);
+app.get("/api/reset", handlerReset);
 
 app.listen(PORT, (error?: Error) => {
   if (error) throw error;
