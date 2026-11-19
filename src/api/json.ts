@@ -1,0 +1,18 @@
+import type { Response } from "express";
+
+export function respondWithJSON(
+  res: Response,
+  code: number,
+  payload: unknown,
+): void {
+  res.header("Content-Type", "application/json");
+  res.status(code).send(JSON.stringify(payload));
+}
+
+export function respondWithError(
+  res: Response,
+  code: number,
+  message: string,
+): void {
+  respondWithJSON(res, code, { error: message });
+}
