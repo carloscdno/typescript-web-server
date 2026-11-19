@@ -17,9 +17,6 @@ app.use(express.json());
 // Website
 app.use("/app", middlewareMetricsInc, express.static("./src/app"));
 
-// Middleware error handler
-app.use(middlewareErrorHandler);
-
 // API
 app.get("/api/healthz", handlerReadiness);
 app.post("/api/validate_chirp", handlerValidateChirp);
@@ -27,6 +24,9 @@ app.post("/api/validate_chirp", handlerValidateChirp);
 // Admin
 app.get("/admin/metrics", handlerMetrics);
 app.post("/admin/reset", handlerReset);
+
+// Middleware error handler
+app.use(middlewareErrorHandler);
 
 app.listen(PORT, (error?: Error) => {
   if (error) throw error;
