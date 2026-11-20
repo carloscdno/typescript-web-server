@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { createChirp, getChirps } from "../db/queries/chirps.js";
-import { BadRequestError } from "../errors.js";
+import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
+import { BadRequestError, NotFoundError } from "../errors.js";
 import { respondWithJSON } from "./json.js";
 import type { Chirp } from "../db/schema.js";
 
@@ -97,4 +97,23 @@ export async function handlerGetChirps(
 ): Promise<void> {
   const chirps = await getChirps();
   respondWithJSON(res, 200, chirps.map(toChirpResponse));
+}
+
+export async function handlerGetChirp(
+  req: Request<{ chirpId: string }>,
+  res: Response,
+): Promise<void> {
+  const { chirpId } = req.params;
+
+  // A malformed id can't match any chirp; also avoids a Postgres uuid error (500)
+  if (!UUID_REGEX.test(chirpId)) {
+    throw new NotFoundError("Chirp not found");
+  }
+
+  const chirp = await getChirpById(chirpId);
+  if (!chirp) {
+    throw new NotFoundError("Chirp not found");
+  }
+
+  respondWithJSON(res, 200, toChirpResponse(chirp));
 }
