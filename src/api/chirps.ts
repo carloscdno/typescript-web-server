@@ -1,25 +1,31 @@
 import type { Request, Response } from "express";
-import { respondWithJSON } from "./json.js";
+import { createChirp } from "../db/queries/chirps.js";
 import { BadRequestError } from "../errors.js";
+import { respondWithJSON } from "./json.js";
 
 const MAX_CHIRP_LENGTH = 140;
 const PROFANE_WORDS = new Set(["kerfuffle", "sharbert", "fornax"]);
 const REPLACEMENT = "****";
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PG_FOREIGN_KEY_VIOLATION = "23503";
 
-type ChirpParams = {
+type CreateChirpParams = {
   body: string;
+  userId: string;
 };
 
-function isChirpParams(value: unknown): value is ChirpParams {
+function isCreateChirpParams(value: unknown): value is CreateChirpParams {
   return (
     typeof value === "object" &&
     value !== null &&
     "body" in value &&
-    typeof value.body === "string"
+    typeof value.body === "string" &&
+    "userId" in value &&
+    typeof value.userId === "string"
   );
 }
 
-// Replace profane words (case-insensitive, exact match between spaces)
 function cleanChirp(text: string): string {
   return text
     .split(" ")
@@ -27,13 +33,19 @@ function cleanChirp(text: string): string {
     .join(" ");
 }
 
-export async function handlerValidateChirp(
+// Drizzle may wrap the driver error, so check both the error and its cause
+function isForeignKeyViolation(err: unknown): boolean {
+  const e = err as { code?: string; cause?: { code?: string } } | null;
+  return (e?.code ?? e?.cause?.code) === PG_FOREIGN_KEY_VIOLATION;
+}
+
+export async function handlerCreateChirp(
   req: Request,
   res: Response,
 ): Promise<void> {
   const params: unknown = req.body;
 
-  if (!isChirpParams(params)) {
+  if (!isCreateChirpParams(params)) {
     throw new BadRequestError("Invalid request body");
   }
 
@@ -43,5 +55,32 @@ export async function handlerValidateChirp(
     );
   }
 
-  respondWithJSON(res, 200, { cleanedBody: cleanChirp(params.body) });
+  if (!UUID_REGEX.test(params.userId)) {
+    throw new BadRequestError("Invalid userId");
+  }
+
+  let chirp;
+  try {
+    chirp = await createChirp({
+      body: cleanChirp(params.body),
+      userId: params.userId,
+    });
+  } catch (err) {
+    if (isForeignKeyViolation(err)) {
+      throw new BadRequestError("User does not exist");
+    }
+    throw err; // anything else stays a 500
+  }
+
+  if (!chirp) {
+    throw new Error("Chirp insert returned no row");
+  }
+
+  respondWithJSON(res, 201, {
+    id: chirp.id,
+    createdAt: chirp.createdAt,
+    updatedAt: chirp.updatedAt,
+    body: chirp.body,
+    userId: chirp.userId,
+  });
 }
