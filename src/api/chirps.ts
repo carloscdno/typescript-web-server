@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { createChirp } from "../db/queries/chirps.js";
 import { BadRequestError } from "../errors.js";
 import { respondWithJSON } from "./json.js";
+import type { Chirp } from "../db/schema.js";
 
 const MAX_CHIRP_LENGTH = 140;
 const PROFANE_WORDS = new Set(["kerfuffle", "sharbert", "fornax"]);
@@ -76,11 +77,16 @@ export async function handlerCreateChirp(
     throw new Error("Chirp insert returned no row");
   }
 
-  respondWithJSON(res, 201, {
+  respondWithJSON(res, 201, toChirpResponse(chirp));
+}
+
+// Single source of truth for the public shape of a chirp
+function toChirpResponse(chirp: Chirp) {
+  return {
     id: chirp.id,
     createdAt: chirp.createdAt,
     updatedAt: chirp.updatedAt,
     body: chirp.body,
     userId: chirp.userId,
-  });
+  };
 }
