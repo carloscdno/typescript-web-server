@@ -5,6 +5,7 @@ import { handlerMetrics } from "./api/metrics.js";
 import { handlerReset } from "./api/reset.js";
 import { handlerValidateChirp } from "./api/chirps.js";
 import { config } from "./config.js";
+import { handlerCreateUser } from "./api/users.js";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use("/app", middlewareMetricsInc, express.static("./src/app"));
 // API
 app.get("/api/healthz", handlerReadiness);
 app.post("/api/validate_chirp", handlerValidateChirp);
+app.post("/api/users", handlerCreateUser);
 
 // Admin
 app.get("/admin/metrics", handlerMetrics);
