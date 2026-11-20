@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { createChirp } from "../db/queries/chirps.js";
+import { createChirp, getChirps } from "../db/queries/chirps.js";
 import { BadRequestError } from "../errors.js";
 import { respondWithJSON } from "./json.js";
 import type { Chirp } from "../db/schema.js";
@@ -89,4 +89,12 @@ function toChirpResponse(chirp: Chirp) {
     body: chirp.body,
     userId: chirp.userId,
   };
+}
+
+export async function handlerGetChirps(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  const chirps = await getChirps();
+  respondWithJSON(res, 200, chirps.map(toChirpResponse));
 }
