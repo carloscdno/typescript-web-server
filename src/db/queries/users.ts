@@ -1,7 +1,7 @@
 import { db } from "../index.js";
-import { type NewUser, users } from "../schema.js";
+import { type NewUser, User, users } from "../schema.js";
 
-export async function createUser(user: NewUser) {
+export async function createUser(user: NewUser): Promise<User | undefined> {
   const [result] = await db
     .insert(users)
     .values(user)

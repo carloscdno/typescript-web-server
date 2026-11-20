@@ -8,6 +8,13 @@
       "when": 1795119329223,
       "tag": "0000_worthless_mentor",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795201879351,
+      "tag": "0001_brown_thor",
+      "breakpoints": true
     }
   ]
 }
