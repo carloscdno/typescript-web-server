@@ -45,7 +45,7 @@ export async function handlerLogin(req: Request, res: Response): Promise<void> {
   }
 
   // Default to the max duration; clients can only shorten it
-  const maxDuration = config.jwt.defaultDuration;
+  const maxDuration = config.jwt.accessTokenDuration;
   const expiresIn = Math.min(params.expiresInSeconds ?? maxDuration, maxDuration);
 
   const token = makeJWT(user.id, expiresIn, config.jwt.secret);
