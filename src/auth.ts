@@ -57,19 +57,7 @@ export function validateJWT(tokenString: string, secret: string): string {
 }
 
 export function extractBearerToken(authorization: string | undefined): string {
-  if (!authorization) {
-    throw new BadRequestError("Missing authorization header");
-  }
-
-  // Split on any run of whitespace: "Bearer   TOKEN" → ["Bearer", "TOKEN"]
-  const [scheme, token, ...rest] = authorization.trim().split(/\s+/);
-
-  // The scheme is case-insensitive per the HTTP spec; tokens contain no spaces
-  if (scheme?.toLowerCase() !== "bearer" || !token || rest.length > 0) {
-    throw new BadRequestError("Malformed authorization header");
-  }
-
-  return token;
+  return extractAuthCredential(authorization, "Bearer");
 }
 
 export function getBearerToken(req: Request): string {
@@ -82,4 +70,26 @@ export function getBearerToken(req: Request): string {
 
 export function makeRefreshToken(): string {
   return randomBytes(32).toString("hex");
+}
+
+// Parses "<Scheme> <credential>"; the scheme is case-insensitive per the HTTP spec
+function extractAuthCredential(
+  authorization: string | undefined,
+  expectedScheme: string,
+): string {
+  if (!authorization) {
+    throw new BadRequestError("Missing authorization header");
+  }
+
+  const [scheme, credential, ...rest] = authorization.trim().split(/\s+/);
+
+  if (
+    scheme?.toLowerCase() !== expectedScheme.toLowerCase() ||
+    !credential ||
+    rest.length > 0
+  ) {
+    throw new BadRequestError("Malformed authorization header");
+  }
+
+  return credential;
 }
