@@ -1,7 +1,7 @@
 import * as argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "jsonwebtoken";
-import { UnauthorizedError } from "./errors.js";
+import { BadRequestError, UnauthorizedError } from "./errors.js";
 
 const TOKEN_ISSUER = "chirpy";
 const TOKEN_ALGORITHM = "HS256";
@@ -52,4 +52,20 @@ export function validateJWT(tokenString: string, secret: string): string {
   }
 
   return decoded.sub;
+}
+
+export function extractBearerToken(authorization: string | undefined): string {
+  if (!authorization) {
+    throw new BadRequestError("Missing authorization header");
+  }
+
+  // Split on any run of whitespace: "Bearer   TOKEN" → ["Bearer", "TOKEN"]
+  const [scheme, token, ...rest] = authorization.trim().split(/\s+/);
+
+  // The scheme is case-insensitive per the HTTP spec; tokens contain no spaces
+  if (scheme?.toLowerCase() !== "bearer" || !token || rest.length > 0) {
+    throw new BadRequestError("Malformed authorization header");
+  }
+
+  return token;
 }
