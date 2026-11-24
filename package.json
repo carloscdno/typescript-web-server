@@ -23,6 +23,7 @@
   "homepage": "https://github.com/carloscdno/typescript-web-server#readme",
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.6",
     "concurrently": "^10.0.7",
     "drizzle-kit": "^0.31.11",
@@ -32,6 +33,7 @@
     "argon2": "^0.45.2",
     "drizzle-orm": "^0.45.4",
     "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
     "postgres": "^4.1.1"
   }
 }
