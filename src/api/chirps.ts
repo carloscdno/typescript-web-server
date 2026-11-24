@@ -6,12 +6,11 @@ import type { Chirp } from "../db/schema.js";
 import { getBearerToken, validateJWT } from "../auth.js";
 import { config } from "../config.js";
 import { isPgError, PG_FOREIGN_KEY_VIOLATION } from "../db/errors.js";
+import { UUID_REGEX } from "./validation.js";
 
 const MAX_CHIRP_LENGTH = 140;
 const PROFANE_WORDS = new Set(["kerfuffle", "sharbert", "fornax"]);
 const REPLACEMENT = "****";
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type CreateChirpParams = {
   body: string;
