@@ -29,6 +29,13 @@
       "when": 1795549191290,
       "tag": "0003_hard_tyger_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795553706276,
+      "tag": "0004_youthful_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

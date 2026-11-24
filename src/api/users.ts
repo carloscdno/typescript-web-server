@@ -17,9 +17,9 @@ export function toUserResponse(user: User): UserResponse {
     email: user.email,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    isChirpyRed: user.isChirpyRed, // new
   };
 }
-
 export type CredentialsParams = {
   email: string;
   password: string;
