@@ -80,10 +80,25 @@ function toChirpResponse(chirp: Chirp) {
 }
 
 export async function handlerGetChirps(
-  _req: Request,
+  req: Request,
   res: Response,
 ): Promise<void> {
-  const chirps = await getChirps();
+  const authorIdQuery = req.query.authorId;
+
+  // ?authorId=a&authorId=b arrives as an array
+  if (authorIdQuery !== undefined && typeof authorIdQuery !== "string") {
+    throw new BadRequestError("authorId must be a single value");
+  }
+
+  const authorId = authorIdQuery ?? "";
+
+  // A malformed id can't match any author: skip the query (also avoids a Postgres uuid error)
+  if (authorId && !UUID_REGEX.test(authorId)) {
+    respondWithJSON(res, 200, []);
+    return;
+  }
+
+  const chirps = await getChirps(authorId || undefined);
   respondWithJSON(res, 200, chirps.map(toChirpResponse));
 }
 
