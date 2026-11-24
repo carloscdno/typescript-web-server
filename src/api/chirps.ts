@@ -1,5 +1,11 @@
 import type { Request, Response } from "express";
-import { createChirp, getChirpById, getChirps, deleteChirp } from "../db/queries/chirps.js";
+import { 
+  type SortOrder, 
+  createChirp, 
+  deleteChirp, 
+  getChirpById, 
+  getChirps,
+ } from "../db/queries/chirps.js";
 import { BadRequestError, NotFoundError, UnauthorizedError, ForbiddenError } from "../errors.js";
 import { respondWithJSON } from "./json.js";
 import type { Chirp } from "../db/schema.js";
@@ -15,6 +21,10 @@ const REPLACEMENT = "****";
 type CreateChirpParams = {
   body: string;
 };
+
+function isSortOrder(value: unknown): value is SortOrder { 
+  return value === "asc" || value === "desc";
+}
 
 function isCreateChirpParams(value: unknown): value is CreateChirpParams {
   return (
@@ -84,21 +94,25 @@ export async function handlerGetChirps(
   res: Response,
 ): Promise<void> {
   const authorIdQuery = req.query.authorId;
+  const sortQuery = req.query.sort; // new
 
-  // ?authorId=a&authorId=b arrives as an array
   if (authorIdQuery !== undefined && typeof authorIdQuery !== "string") {
     throw new BadRequestError("authorId must be a single value");
   }
 
-  const authorId = authorIdQuery ?? "";
+  if (sortQuery !== undefined && !isSortOrder(sortQuery)) { // new
+    throw new BadRequestError('sort must be "asc" or "desc"');
+  }
 
-  // A malformed id can't match any author: skip the query (also avoids a Postgres uuid error)
+  const authorId = authorIdQuery ?? "";
+  const sort: SortOrder = sortQuery ?? "asc"; // new
+
   if (authorId && !UUID_REGEX.test(authorId)) {
     respondWithJSON(res, 200, []);
     return;
   }
 
-  const chirps = await getChirps(authorId || undefined);
+  const chirps = await getChirps(authorId || undefined, sort); // updated
   respondWithJSON(res, 200, chirps.map(toChirpResponse));
 }
 
