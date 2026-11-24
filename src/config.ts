@@ -16,7 +16,8 @@ type DBConfig = {
 
 type JWTConfig = {
   secret: string;
-  defaultDuration: number; // seconds
+  accessTokenDuration: number;  // seconds
+  refreshTokenDuration: number; // seconds
 };
 
 type Config = {
@@ -41,8 +42,9 @@ export const config: Config = {
     migrationConfig,
   },
   jwt: {
-    secret: envOrThrow("JWT_SECRET"),
-    defaultDuration: 60 * 60, // 1 hour
+  secret: envOrThrow("JWT_SECRET"),
+  accessTokenDuration: 60 * 60,             // 1 hour
+  refreshTokenDuration: 60 * 24 * 60 * 60,  // 60 days
   },
 };
 
