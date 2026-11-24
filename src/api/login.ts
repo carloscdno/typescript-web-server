@@ -1,16 +1,30 @@
 import type { Request, Response } from "express";
-import { checkPasswordHash } from "../auth.js";
+import { checkPasswordHash, makeJWT } from "../auth.js";
+import { config } from "../config.js";
 import { getUserByEmail } from "../db/queries/users.js";
 import { BadRequestError, UnauthorizedError } from "../errors.js";
 import { respondWithJSON } from "./json.js";
-import { isCredentialsParams, toUserResponse } from "./users.js";
+import { type CredentialsParams, isCredentialsParams, toUserResponse } from "./users.js";
 
 const LOGIN_ERROR = "incorrect email or password";
+
+type LoginParams = CredentialsParams & {
+  expiresInSeconds?: number;
+};
+
+function isLoginParams(value: unknown): value is LoginParams {
+  if (!isCredentialsParams(value)) return false;
+  if (!("expiresInSeconds" in value) || value.expiresInSeconds === undefined) {
+    return true; // optional
+  }
+  const exp = value.expiresInSeconds;
+  return typeof exp === "number" && Number.isInteger(exp) && exp > 0;
+}
 
 export async function handlerLogin(req: Request, res: Response): Promise<void> {
   const params: unknown = req.body;
 
-  if (!isCredentialsParams(params)) {
+  if (!isLoginParams(params)) {
     throw new BadRequestError("Invalid request body");
   }
 
@@ -23,7 +37,6 @@ export async function handlerLogin(req: Request, res: Response): Promise<void> {
   try {
     passwordMatches = await checkPasswordHash(params.password, user.hashedPassword);
   } catch {
-    // Malformed stored hash (e.g. "unset" for legacy users): treat as a failed login
     passwordMatches = false;
   }
 
@@ -31,5 +44,11 @@ export async function handlerLogin(req: Request, res: Response): Promise<void> {
     throw new UnauthorizedError(LOGIN_ERROR);
   }
 
-  respondWithJSON(res, 200, toUserResponse(user));
+  // Default to the max duration; clients can only shorten it
+  const maxDuration = config.jwt.defaultDuration;
+  const expiresIn = Math.min(params.expiresInSeconds ?? maxDuration, maxDuration);
+
+  const token = makeJWT(user.id, expiresIn, config.jwt.secret);
+
+  respondWithJSON(res, 200, { ...toUserResponse(user), token });
 }
