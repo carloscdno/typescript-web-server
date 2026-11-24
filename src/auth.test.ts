@@ -6,6 +6,7 @@ import {
   hashPassword,
   makeJWT,
   validateJWT,
+  makeRefreshToken
 } from "./auth.js";
 import { BadRequestError, UnauthorizedError } from "./errors.js";
 
@@ -129,5 +130,16 @@ describe("extractBearerToken", () => {
     ["Bearer abc 123"],
   ])("throws BadRequestError for %j", (header) => {
     expect(() => extractBearerToken(header)).toThrow(BadRequestError);
+  });
+});
+
+describe("makeRefreshToken", () => {
+  it("returns a 64-character hex string (32 bytes)", () => {
+    expect(makeRefreshToken()).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("returns a different token on each call", () => {
+    const tokens = new Set(Array.from({ length: 100 }, () => makeRefreshToken()));
+    expect(tokens.size).toBe(100);
   });
 });
