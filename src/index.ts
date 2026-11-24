@@ -4,7 +4,7 @@ import { middlewareLogResponses, middlewareMetricsInc, middlewareErrorHandler } 
 import { handlerMetrics } from "./api/metrics.js";
 import { handlerReset } from "./api/reset.js";
 import { config } from "./config.js";
-import { handlerCreateUser } from "./api/users.js";
+import { handlerCreateUser, handlerUpdateUser } from "./api/users.js";
 import { handlerCreateChirp, handlerGetChirps, handlerGetChirp } from "./api/chirps.js";
 import { handlerLogin } from "./api/login.js";
 import { handlerRefresh, handlerRevoke } from "./api/tokens.js";
@@ -30,6 +30,8 @@ app.post("/api/users", handlerCreateUser);
 app.post("/api/login", handlerLogin);
 app.post("/api/refresh", handlerRefresh);
 app.post("/api/revoke", handlerRevoke);
+app.post("/api/users", handlerCreateUser);
+app.put("/api/users", handlerUpdateUser);
 
 // Admin
 app.get("/admin/metrics", handlerMetrics);
