@@ -15,6 +15,13 @@
       "when": 1795201879351,
       "tag": "0001_brown_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795532766265,
+      "tag": "0002_complete_toxin",
+      "breakpoints": true
     }
   ]
 }
