@@ -1,7 +1,13 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import jwt from "jsonwebtoken";
-import { checkPasswordHash, hashPassword, makeJWT, validateJWT } from "./auth.js";
-import { UnauthorizedError } from "./errors.js";
+import {
+  checkPasswordHash,
+  extractBearerToken,
+  hashPassword,
+  makeJWT,
+  validateJWT,
+} from "./auth.js";
+import { BadRequestError, UnauthorizedError } from "./errors.js";
 
 describe("Password Hashing", () => {
   const password1 = "correctPassword123!";
@@ -94,5 +100,34 @@ describe("JWT", () => {
 
   it("rejects a malformed token", () => {
     expect(() => validateJWT("not-a-jwt", secret)).toThrow(UnauthorizedError);
+  });
+});
+
+describe("extractBearerToken", () => {
+  it.each([
+    ["Bearer abc123", "abc123"],
+    ["  Bearer abc123  ", "abc123"],
+    ["Bearer    abc123", "abc123"],
+    ["Bearer\tabc123", "abc123"],
+    ["bearer abc123", "abc123"],
+    ["BEARER abc123", "abc123"],
+    ["Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig", "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig"],
+  ])("extracts the token from %j", (header, expected) => {
+    expect(extractBearerToken(header)).toBe(expected);
+  });
+
+  it.each([
+    [undefined],
+    [""],
+    ["   "],
+    ["Bearer"],
+    ["Bearer   "],
+    ["Basic dXNlcjpwYXNz"],
+    ["Token abc123"],
+    ["Bearerabc123"],
+    ["abc123"],
+    ["Bearer abc 123"],
+  ])("throws BadRequestError for %j", (header) => {
+    expect(() => extractBearerToken(header)).toThrow(BadRequestError);
   });
 });
