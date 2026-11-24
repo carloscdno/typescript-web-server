@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { upgradeUserToChirpyRed } from "../db/queries/users.js";
-import { BadRequestError, NotFoundError } from "../errors.js";
+import { getAPIKey, safeCompare } from "../auth.js";
+import { config } from "../config.js";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../errors.js";
 import { UUID_REGEX } from "./validation.js";
 
 const USER_UPGRADED_EVENT = "user.upgraded";
@@ -36,7 +38,14 @@ export async function handlerPolkaWebhook(
   req: Request,
   res: Response,
 ): Promise<void> {
+  // Only Polka knows this key                              
+  const apiKey = getAPIKey(req);                           
+  if (!safeCompare(apiKey, config.api.polkaKey)) {          
+    throw new UnauthorizedError("Invalid API key");        
+  }                                                        
+
   const params: unknown = req.body;
+
 
   if (!hasEvent(params)) {
     throw new BadRequestError("Invalid request body");
