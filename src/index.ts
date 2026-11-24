@@ -7,6 +7,7 @@ import { config } from "./config.js";
 import { handlerCreateUser } from "./api/users.js";
 import { handlerCreateChirp, handlerGetChirps, handlerGetChirp } from "./api/chirps.js";
 import { handlerLogin } from "./api/login.js";
+import { handlerRefresh, handlerRevoke } from "./api/tokens.js";
 
 const app = express();
 
@@ -27,6 +28,8 @@ app.get("/api/chirps", handlerGetChirps);
 app.get("/api/chirps/:chirpId", handlerGetChirp);
 app.post("/api/users", handlerCreateUser);
 app.post("/api/login", handlerLogin);
+app.post("/api/refresh", handlerRefresh);
+app.post("/api/revoke", handlerRevoke);
 
 // Admin
 app.get("/admin/metrics", handlerMetrics);
