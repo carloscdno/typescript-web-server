@@ -1,3 +1,4 @@
+import type { Request } from "express";
 import * as argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "jsonwebtoken";
@@ -68,4 +69,12 @@ export function extractBearerToken(authorization: string | undefined): string {
   }
 
   return token;
+}
+
+export function getBearerToken(req: Request): string {
+  const header = req.get("Authorization");
+  if (!header) {
+    throw new UnauthorizedError("Missing authorization header");
+  }
+  return extractBearerToken(header);
 }
