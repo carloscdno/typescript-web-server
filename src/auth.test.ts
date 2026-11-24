@@ -6,7 +6,9 @@ import {
   hashPassword,
   makeJWT,
   validateJWT,
-  makeRefreshToken
+  makeRefreshToken,
+  extractAPIKey,
+  safeCompare
 } from "./auth.js";
 import { BadRequestError, UnauthorizedError } from "./errors.js";
 
@@ -141,5 +143,40 @@ describe("makeRefreshToken", () => {
   it("returns a different token on each call", () => {
     const tokens = new Set(Array.from({ length: 100 }, () => makeRefreshToken()));
     expect(tokens.size).toBe(100);
+  });
+});
+
+describe("extractAPIKey", () => {
+  it.each([
+    ["ApiKey abc123", "abc123"],
+    ["  ApiKey   abc123  ", "abc123"],
+    ["apikey abc123", "abc123"],
+  ])("extracts the key from %j", (header, expected) => {
+    expect(extractAPIKey(header)).toBe(expected);
+  });
+
+  it.each([
+    [undefined],
+    [""],
+    ["ApiKey"],
+    ["Bearer abc123"],
+    ["ApiKeyabc123"],
+    ["ApiKey abc 123"],
+  ])("throws BadRequestError for %j", (header) => {
+    expect(() => extractAPIKey(header)).toThrow(BadRequestError);
+  });
+});
+
+describe("safeCompare", () => {
+  it("returns true for identical strings", () => {
+    expect(safeCompare("secret-key", "secret-key")).toBe(true);
+  });
+
+  it.each([
+    ["secret-key", "secret-kez"],
+    ["secret-key", "secret"],
+    ["secret-key", ""],
+  ])("returns false for %j vs %j", (a, b) => {
+    expect(safeCompare(a, b)).toBe(false);
   });
 });

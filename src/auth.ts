@@ -3,7 +3,7 @@ import * as argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "jsonwebtoken";
 import { BadRequestError, UnauthorizedError } from "./errors.js";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 const TOKEN_ISSUER = "chirpy";
 const TOKEN_ALGORITHM = "HS256";
@@ -92,4 +92,23 @@ function extractAuthCredential(
   }
 
   return credential;
+}
+
+export function extractAPIKey(authorization: string | undefined): string {
+  return extractAuthCredential(authorization, "ApiKey");
+}
+
+export function getAPIKey(req: Request): string {
+  const header = req.get("Authorization");
+  if (!header) {
+    throw new UnauthorizedError("Missing authorization header");
+  }
+  return extractAPIKey(header);
+}
+
+// Constant-time comparison: doesn't leak how many leading characters match
+export function safeCompare(a: string, b: string): boolean {
+  const hashA = createHash("sha256").update(a).digest();
+  const hashB = createHash("sha256").update(b).digest();
+  return timingSafeEqual(hashA, hashB);
 }
