@@ -17,6 +17,7 @@ import {
 } from "./api/chirps.js";
 import { handlerLogin } from "./api/login.js";
 import { handlerRefresh, handlerRevoke } from "./api/tokens.js";
+import { handlerPolkaWebhook } from "./api/polka.js";
 
 const app = express();
 
@@ -44,6 +45,9 @@ app.get("/api/chirps", handlerGetChirps);
 app.post("/api/chirps", handlerCreateChirp);
 app.get("/api/chirps/:chirpId", handlerGetChirp);
 app.delete("/api/chirps/:chirpId", handlerDeleteChirp);
+
+// API: webhooks
+app.post("/api/polka/webhooks", handlerPolkaWebhook);
 
 // Admin
 app.get("/admin/metrics", handlerMetrics);
