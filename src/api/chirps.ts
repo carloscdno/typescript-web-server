@@ -1,8 +1,10 @@
 import type { Request, Response } from "express";
 import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
-import { BadRequestError, NotFoundError } from "../errors.js";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../errors.js";
 import { respondWithJSON } from "./json.js";
 import type { Chirp } from "../db/schema.js";
+import { getBearerToken, validateJWT } from "../auth.js";
+import { config } from "../config.js";
 
 const MAX_CHIRP_LENGTH = 140;
 const PROFANE_WORDS = new Set(["kerfuffle", "sharbert", "fornax"]);
@@ -13,7 +15,6 @@ const PG_FOREIGN_KEY_VIOLATION = "23503";
 
 type CreateChirpParams = {
   body: string;
-  userId: string;
 };
 
 function isCreateChirpParams(value: unknown): value is CreateChirpParams {
@@ -21,9 +22,7 @@ function isCreateChirpParams(value: unknown): value is CreateChirpParams {
     typeof value === "object" &&
     value !== null &&
     "body" in value &&
-    typeof value.body === "string" &&
-    "userId" in value &&
-    typeof value.userId === "string"
+    typeof value.body === "string"
   );
 }
 
@@ -44,8 +43,11 @@ export async function handlerCreateChirp(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const params: unknown = req.body;
+  // Authenticate first: unauthenticated clients learn nothing else
+  const token = getBearerToken(req);
+  const userId = validateJWT(token, config.jwt.secret);
 
+  const params: unknown = req.body;
   if (!isCreateChirpParams(params)) {
     throw new BadRequestError("Invalid request body");
   }
@@ -56,21 +58,15 @@ export async function handlerCreateChirp(
     );
   }
 
-  if (!UUID_REGEX.test(params.userId)) {
-    throw new BadRequestError("Invalid userId");
-  }
-
   let chirp;
   try {
-    chirp = await createChirp({
-      body: cleanChirp(params.body),
-      userId: params.userId,
-    });
+    chirp = await createChirp({ body: cleanChirp(params.body), userId });
   } catch (err) {
+    // Valid token, but the user was deleted after it was issued
     if (isForeignKeyViolation(err)) {
-      throw new BadRequestError("User does not exist");
+      throw new UnauthorizedError("Invalid token");
     }
-    throw err; // anything else stays a 500
+    throw err;
   }
 
   if (!chirp) {
