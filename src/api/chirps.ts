@@ -5,13 +5,13 @@ import { respondWithJSON } from "./json.js";
 import type { Chirp } from "../db/schema.js";
 import { getBearerToken, validateJWT } from "../auth.js";
 import { config } from "../config.js";
+import { isPgError, PG_FOREIGN_KEY_VIOLATION } from "../db/errors.js";
 
 const MAX_CHIRP_LENGTH = 140;
 const PROFANE_WORDS = new Set(["kerfuffle", "sharbert", "fornax"]);
 const REPLACEMENT = "****";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const PG_FOREIGN_KEY_VIOLATION = "23503";
 
 type CreateChirpParams = {
   body: string;
@@ -31,12 +31,6 @@ function cleanChirp(text: string): string {
     .split(" ")
     .map((word) => (PROFANE_WORDS.has(word.toLowerCase()) ? REPLACEMENT : word))
     .join(" ");
-}
-
-// Drizzle may wrap the driver error, so check both the error and its cause
-function isForeignKeyViolation(err: unknown): boolean {
-  const e = err as { code?: string; cause?: { code?: string } } | null;
-  return (e?.code ?? e?.cause?.code) === PG_FOREIGN_KEY_VIOLATION;
 }
 
 export async function handlerCreateChirp(
@@ -62,11 +56,10 @@ export async function handlerCreateChirp(
   try {
     chirp = await createChirp({ body: cleanChirp(params.body), userId });
   } catch (err) {
-    // Valid token, but the user was deleted after it was issued
-    if (isForeignKeyViolation(err)) {
-      throw new UnauthorizedError("Invalid token");
-    }
-    throw err;
+  if (isPgError(err, PG_FOREIGN_KEY_VIOLATION)) {
+    throw new UnauthorizedError("Invalid token");
+  }
+  throw err;
   }
 
   if (!chirp) {
